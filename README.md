@@ -61,14 +61,55 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Tests compile with strict warnings and, by default when `BUILD_TESTING` is on,
-AddressSanitizer and UndefinedBehaviorSanitizer. Disable this only when needed
-with `-DREADABILITY_ENABLE_SANITIZERS=OFF`.
+Standalone tests compile with strict warnings and, by default, AddressSanitizer
+and UndefinedBehaviorSanitizer. The project-specific options are:
+
+```text
+READABILITY_BUILD_TESTS        ON when built standalone, OFF as a dependency
+READABILITY_BUILD_EXAMPLES     ON when built standalone, OFF as a dependency
+READABILITY_ENABLE_SANITIZERS  follows READABILITY_BUILD_TESTS by default
+```
+
+This keeps `FetchContent` integration lightweight while retaining strict
+standalone development defaults.
+
+To consume the tagged release directly:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+  readability
+  SYSTEM
+  GIT_REPOSITORY https://github.com/L-A-Marchetti/readability-cpp.git
+  GIT_TAG v0.1.0
+)
+FetchContent_MakeAvailable(readability)
+
+target_link_libraries(your_target PRIVATE readability::readability)
+```
+
+## Example
+
+The [`readability_extract_example`](examples/extract.cpp) executable parses a
+complete HTML document, stores it behind `std::unique_ptr<dom::Document>`, runs
+the parser-independent API, and prints the extracted metadata, readable HTML,
+and readable text:
+
+```sh
+cmake -B build
+cmake --build build --target readability_extract_example
+./build/readability_extract_example
+```
 
 For installation:
 
 ```sh
-cmake --install build --prefix /your/prefix
+cmake -B build-release \
+  -DREADABILITY_BUILD_TESTS=OFF \
+  -DREADABILITY_BUILD_EXAMPLES=OFF \
+  -DREADABILITY_ENABLE_SANITIZERS=OFF
+cmake --build build-release
+cmake --install build-release --prefix /your/prefix
 ```
 
 Consumers may then use `find_package(readability CONFIG REQUIRED)` and link
